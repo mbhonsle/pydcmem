@@ -1,0 +1,30 @@
+openapi: 3.0.3
+components:
+  schemas:
+    AIUserAttributes:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        userId:
+          type: string
+        attribute:
+          type: string
+        value:
+          type: string
+        confidence:
+          type: number
+        source:
+          type: string
+        updatedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastModifiedAt:
+          type: string
+          format: date-time
+        metadata:
+          type: string
+        id:
+          type: string

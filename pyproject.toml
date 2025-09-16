@@ -1,0 +1,66 @@
+[project]
+name = "pydcmem"
+version = "0.1.0"
+description = "Enterprise Agentic Memory implementation based on Salesforce Data Cloud."
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.12"
+authors = [{ name = "Makarand Bhonsle" }]
+dependencies = [
+    "httpx>=0.28.1",
+    "python-dotenv>=1.0.0",
+    "PyJWT>=2.8.0",
+    "cryptography>=41.0.0",
+    "tenacity>=9.0.0",
+    "pydantic>=1.10",
+    "openai>=1.107.3",
+    "pydc-auth>=0.1.3",
+    "uuid6>=2025.0.1"
+]
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+
+    "Topic :: Security",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.urls]
+Homepage = "https://github.com/mbhonsle/pydcmem"
+Issues = "https://github.com/mbhonsle/pydcmem/issues"
+
+[tool.bumpversion]
+current_version = "0.1.0"                   # your current version
+commit = true
+tag = true
+tag_name = "v{new_version}"
+# defaults are fine, but you can be explicit:
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+search = "{current_version}"
+replace = "{new_version}"
+
+# Tell it to actually edit pyproject.toml, and *only* the version line
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
