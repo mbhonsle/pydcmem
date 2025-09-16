@@ -132,9 +132,12 @@ class UserAttributeClient:
 
         for c in work_list:
             attr_key = self._norm(c.attribute) if normalize_attributes else c.attribute
-            current = self._filter_eq(current_mems, "attribute__c", attr_key)[0]
             new_value = c.value.strip()
-            old_value = current.get("value__c")
+            old_value = None
+            current = {}
+            if len(current_mems) > 0:
+                current = self._filter_eq(current_mems, "attribute__c", attr_key)[0]
+                old_value = current.get("value__c")
 
             # Compare values (optionally case-insensitive)
             if old_value is not None and self._equal(old_value, new_value, case_insensitive_compare):
@@ -161,8 +164,12 @@ class UserAttributeClient:
             else:
                 # Update (PUT)
                 current['value__c'] = new_value
-                current['lastModifiedAt__c'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                status, err = self._update_attribute(current)
+                update_obj = {
+                    "id": current['id__c'],
+                    "value__c": new_value,
+                    "lastModifiedAt__c": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                status, err = self._update_attribute(update_obj)
                 if 200 <= (status or 0) < 300:
                     report.updated += 1
                     report.details.append(
@@ -204,7 +211,8 @@ class UserAttributeClient:
             "value": value,
             "createdAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "updatedBy": "system",
-            "source": "experimentation"
+            "source": "experimentation",
+            "lastModifiedAt__c": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }]
         request_object = {"data": data}
         response = self.ingestion_client.ingest_data(request_object, self.connector, self.dlo)
@@ -215,8 +223,7 @@ class UserAttributeClient:
         data = [update_obj]
         request_object = {"data": data}
         response = self.ingestion_client.ingest_data(request_object, self.connector, self.dlo)
-        pdb.set_trace()
-        print(response)
+        print(response.json())
         return self._status_err(response)
 
 
