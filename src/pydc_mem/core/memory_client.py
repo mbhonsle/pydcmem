@@ -11,6 +11,16 @@
 #   report = client.upsert_from_candidates(user_id="alex-id-123", candidates=candidates)
 #   print(report)
 
+"""
+needs the following env vars:
+
+MEMORY_DLO
+MEMORY_CONNECTOR
+VECTOR_IDX_DLM
+CHUNK_DLM
+SALESFORCE_ORGANIZATION_ID
+"""
+
 from __future__ import annotations
 
 import os
