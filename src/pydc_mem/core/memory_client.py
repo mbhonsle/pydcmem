@@ -81,16 +81,24 @@ class UserAttributeClient:
 
         self.dlo = os.getenv('MEMORY_DLO')
         self.connector = os.getenv('MEMORY_CONNECTOR')
+        self.vector_index_dlm = os.getenv("VECTOR_IDX_DLM")
+        self.chunk_dlm = os.getenv("CHUNK_DLM")
         self.tenantId = os.getenv('SALESFORCE_ORGANIZATION_ID')
         self.query_svc_client = QueryServiceClient()
         self.ingestion_client = DataCloudIngestionClient()
 
     # -------------------- public API --------------------
+    def fetch_relevant_attributes(self, user_id: str, utterance: str) -> List[Dict]:
+        resp = self._search_relevant_memories(user_id=user_id, utterance=utterance)
+        print(resp.json())
+        if resp is None:
+            return []
+        try:
+            return parse_tabular_payload(resp.json())["rows"]
+        except Exception:
+            return []
 
     def fetch_user_attributes(self, user_id: str) -> List[Dict]:
-        """
-        Returns a mapping {attribute -> value} for the user.
-        """
         resp = self._search_all_memories(user_id=user_id)
         if resp is None:
             return []
@@ -226,7 +234,6 @@ class UserAttributeClient:
         print(response.json())
         return self._status_err(response)
 
-
     def _search_all_memories(self, user_id: str, **kwargs) -> Optional[httpx.Response]:
         """
         Fetches all current memories of a user
@@ -239,6 +246,28 @@ class UserAttributeClient:
             WHERE
                 "userId__c" = '{user_id}'    
             """
+        request_obj = {
+            "sql": sql
+        }
+        response = self.query_svc_client.read_data(request_obj)
+        return response
+
+    def _search_relevant_memories(self, user_id: str, utterance: str, limit=1,  **kwargs):
+        """
+        fetches memories/attributes relevant to given utterance
+        """
+        sql = f"""
+         SELECT
+            index.RecordId__c,
+            index.score__c,
+            chunk.Chunk__c 
+         FROM 
+            vector_search(TABLE({self.vector_index_dlm}), '{utterance}', '', {limit}) AS index 
+         JOIN 
+            {self.chunk_dlm} AS chunk
+         ON 
+            index.RecordId__c = chunk.RecordId__c
+        """
         request_obj = {
             "sql": sql
         }
