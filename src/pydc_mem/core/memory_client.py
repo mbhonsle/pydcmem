@@ -24,7 +24,6 @@ SALESFORCE_ORGANIZATION_ID
 from __future__ import annotations
 
 import os
-import pdb
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Iterable, List, Dict, Any, Optional, Tuple
@@ -154,8 +153,9 @@ class UserAttributeClient:
             old_value = None
             current = {}
             if len(current_mems) > 0:
-                current = self._filter_eq(current_mems, "attribute__c", attr_key)[0]
-                old_value = current.get("value__c")
+                results = self._filter_eq(current_mems, "attribute__c", attr_key)
+                current = results[0] if len(results) > 0 else {}
+                old_value = current.get("value__c") if current else None
 
             # Compare values (optionally case-insensitive)
             if old_value is not None and self._equal(old_value, new_value, case_insensitive_compare):
