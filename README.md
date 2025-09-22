@@ -2,8 +2,11 @@
 
 **Enterprise Agentic Memory implementation based on Salesforce Data Cloud**
 
-PyDCMem is a Python library that provides intelligent memory management for conversational AI systems by extracting, storing, and retrieving user-specific attributes and preferences from natural language conversations using Salesforce Data Cloud as the backend storage.
+Majority of Salesforce Enterprise customers have already invested in an extensive Data Cloud implementation in the Salesforce eco-system (one or multiple orgs). How do we provide Agentic Memory Solution that simply plugs into these custom implementation without any specific modifications?   
 
+PyDCMem is a Python library that provides intelligent memory management for Enterprise Agentic systems by extracting, storing, and retrieving user-specific attributes and preferences from conversations using Salesforce Data Cloud as the backend storage and data processing engine. 
+
+The setup requires only creating standard Search Index and Streaming Ingestion pipelines without any custom handling, and we have a fully compliant Agentic Memory solution with PyDCmem.
 ## Features
 
 - **Intelligent Memory Extraction**: Uses OpenAI's LLM to extract memory-worthy facts from user utterances
@@ -105,8 +108,29 @@ python -m pydc_mem.dcmem --user-id "user-123" --utterance "What are my preferenc
 ```
 
 ## Architecture
+![PyDcMem.png](resources/PyDcMem.png)
 
-### Core Components
+The architecture depends on two fundamental processes in Salesforce Data Cloud:
+ - Streaming Ingestion
+ - Search Index Pipeline
+
+### Streaming Ingestion Setup
+We need to ingest the memories curated by PyDCMem for a given Agentic chat turn, and for this ingestion, we Data Cloud's standard [Streaming Ingestion API](https://developer.salesforce.com/docs/data/data-cloud-int/references/data-cloud-ingestionapi-ref/c360-a-api-get-started.html).
+
+The setup process is standard, but when you set-up Ingestion API connector use the [AIUserAttributesSchema.yml](src/AIUserAttributesSchema.yml) file. This will create the Ingestion connector specifically for this object.
+
+Once you have the connector setup head over to the Data Cloud App, and create the corresponding DataStream, DataLake and DataModel objects for the stream you created above.
+
+Here are some useful resources:
+- video [demonstration](https://www.youtube.com/watch?v=3xWSVGcTORI) of how to set-up Salesforce Data Cloud Ingestion API
+- Help [Guide](https://developer.salesforce.com/docs/data/data-cloud-int/guide/c360-a-create-ingestion-data-stream.html)
+
+NOTE: you can name the connector and the objects anything you want, but you will need to provide those values env. variables mentioned below.
+### Search Index Pipeline Setup
+
+
+
+### PyDCMem Core Components
 
 #### 1. MemoryExtractor (`core/memory_extractor.py`)
 - **Purpose**: Extracts memory-worthy facts from user utterances using OpenAI's LLM
