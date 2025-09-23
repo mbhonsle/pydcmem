@@ -55,14 +55,15 @@ class AgentMemoryOrchestrator:
         )
         return candidates, report
 
-    def get(self, user_id: str, utterance: str) -> List[Dict]:
-        return self.ua_client.fetch_relevant_attributes(user_id=user_id, utterance=utterance)
+    def get(self, user_id: str, utterance: str, limit: 1) -> List[Dict]:
+        return self.ua_client.fetch_relevant_attributes(user_id=user_id, utterance=utterance, limit=limit)
 
 
 def _build_cli() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="End-to-end memory extraction → user_attributes upsert.")
     p.add_argument("--user-id", required=True, help="The canonical user_id for user_attributes")
     p.add_argument("--utterance", required=True, help="The user's latest message to extract from")
+    p.add_argument("--limit", default=1, help="Number of results to return.")
     p.add_argument("--op-type", required=True, default="update", help="Type of Memory Op: update, get")
     p.add_argument("--dry-run", action="store_true", help="Only extract; do not call REST to upsert")
     p.add_argument("--json", action="store_true", help="Print candidates as JSON")
@@ -84,7 +85,7 @@ def _main() -> None:
         handle_get(args, orch)
 
 def handle_get(args, orch):
-    print(json.dumps(orch.get(user_id=args.user_id, utterance=args.utterance), ensure_ascii=False, indent=2))
+    print(json.dumps(orch.get(user_id=args.user_id, utterance=args.utterance,limit=args.limit), ensure_ascii=False, indent=2))
 
 def handle_update(args, orch):
     candidates, report = orch.update(user_id=args.user_id, utterance=args.utterance, session_vars=None,

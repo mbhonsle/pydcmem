@@ -101,8 +101,8 @@ class UserAttributeClient:
         self.ingestion_client = DataCloudIngestionClient()
 
     # -------------------- public API --------------------
-    def fetch_relevant_attributes(self, user_id: str, utterance: str) -> List[Dict]:
-        resp = self._search_relevant_memories(user_id=user_id, utterance=utterance)
+    def fetch_relevant_attributes(self, user_id: str, utterance: str, limit=1) -> List[Dict]:
+        resp = self._search_relevant_memories(user_id=user_id, utterance=utterance, limit=limit)
         if resp is None:
             return []
         try:
