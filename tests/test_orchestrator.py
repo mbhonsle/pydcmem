@@ -121,12 +121,13 @@ class TestAgentMemoryOrchestrator:
         
         orchestrator = AgentMemoryOrchestrator(mock_extractor, mock_client)
         
-        orchestrator.get(user_id="user123", utterance="What are my preferences?")
+        orchestrator.get(user_id="user123", utterance="What are my preferences?",limit=1)
         
         # Verify client was called
         mock_client.fetch_relevant_attributes.assert_called_once_with(
             user_id="user123",
-            utterance="What are my preferences?"
+            utterance="What are my preferences?",
+            limit=1
         )
     
     def test_update_with_empty_candidates(self):
