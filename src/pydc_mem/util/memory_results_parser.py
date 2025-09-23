@@ -70,7 +70,7 @@ def _coerce_value(value: Any, col_type: str) -> Any:
         except Exception:
             return value  # leave as-is if all parsing fails
 
-    if "DECIMAL" in t or "NUMERIC" in t or "DOUBLE" in t or "FLOAT" in t or "REAL" in t:
+    if "DECIMAL" in t or "NUMERIC" in t or "DOUBLE" in t or "FLOAT" in t or "REAL" in t or "INTEGER" in t:
         try:
             return float(value)
         except Exception:

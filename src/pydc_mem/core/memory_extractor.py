@@ -16,7 +16,7 @@ import re
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from openai import OpenAI
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, validator
 from dotenv import load_dotenv
 
 
@@ -24,17 +24,18 @@ class MemoryCandidate(BaseModel):
     """
     Single memory fact extracted for long-term storage.
     """
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    class Config:
+        extra = "forbid"
+    
     entity: str
     attribute: str
     value: str
 
-    @field_validator("entity", "attribute", "value")
-    @classmethod
-    def _not_empty(cls, v: str) -> str:
+    @validator("entity", "attribute", "value")
+    def _not_empty(cls, v):
         if not v:
             raise ValueError("must be non-empty")
-        return v
+        return v.strip() if isinstance(v, str) else v
 
 
 class MemoryExtractor:
@@ -148,23 +149,51 @@ If there are no memory-worthy facts, return [].
     def extract_dicts(
         self,
         utterance: str,
-        **kwargs: Any,
+        *,
+        session_vars: Optional[Dict[str, Any]] = None,
+        recent_dialogue: Optional[Sequence[Tuple[str, str]] | Sequence[str]] = None,
+        past_memory_facts: Optional[Iterable[str]] = None,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Same as `extract`, but returns a list of dicts (useful if you don't want Pydantic objects).
         """
-        raw = self._call_llm(utterance=utterance, **kwargs)
+        raw = self._call_llm(
+            utterance=utterance,
+            session_vars=session_vars,
+            recent_dialogue=recent_dialogue,
+            past_memory_facts=past_memory_facts,
+            model=model or self.model,
+            temperature=self._pick(temperature, self.temperature),
+            max_tokens=self._pick(max_tokens, self.max_tokens),
+        )
         return self._parse_json_array(raw)
 
     def extract_json(
         self,
         utterance: str,
-        **kwargs: Any,
+        *,
+        session_vars: Optional[Dict[str, Any]] = None,
+        recent_dialogue: Optional[Sequence[Tuple[str, str]] | Sequence[str]] = None,
+        past_memory_facts: Optional[Iterable[str]] = None,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
     ) -> str:
         """
         Same as `extract`, but returns a pretty-printed JSON string.
         """
-        rows = self.extract_dicts(utterance, **kwargs)
+        rows = self.extract_dicts(
+            utterance,
+            session_vars=session_vars,
+            recent_dialogue=recent_dialogue,
+            past_memory_facts=past_memory_facts,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
         return json.dumps(rows, ensure_ascii=False, indent=2)
 
     # ---------------------------
@@ -266,7 +295,7 @@ If there are no memory-worthy facts, return [].
         out: List[MemoryCandidate] = []
         for row in rows:
             try:
-                out.append(MemoryCandidate.model_validate(row))
+                out.append(MemoryCandidate(**row))
             except Exception:
                 # Silently skip invalid rows; callers can add logging if desired.
                 continue

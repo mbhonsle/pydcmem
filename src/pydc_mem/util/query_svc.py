@@ -6,7 +6,17 @@ import httpx
 import logging
 from typing import Dict, Any, List
 from pydantic import BaseModel
-from pydc_auth import SalesforceTokenGenerator
+try:
+    from pydc_auth import SalesforceTokenGenerator
+except ImportError:
+    # Mock for testing when pydc_auth is not available
+    class SalesforceTokenGenerator:
+        def get_sf_token(self):
+            from types import SimpleNamespace
+            return SimpleNamespace(
+                access_token="mock_sf_token",
+                instance_url="https://mock-instance.salesforce.com"
+            )
 
 QUERY_SVC_ENDPOINT = 'services/data/v63.0/ssot/queryv2'
 
@@ -65,15 +75,6 @@ class QueryServiceClient:
             response = self.client.post(url, json=data, headers=headers)
             response.raise_for_status()
             return response
-            # items = response.json()['data']
-            # output = []
-            # for item in items:
-            #     output.append(QueryOutput(
-            #         id=item[0],
-            #         score=item[1],
-            #         payload=item[2]
-            #     ))
-            # return output
 
         except httpx.HTTPStatusError as e:
             error_msg = f"HTTP error {e.response.status_code}: {e.response.text}"

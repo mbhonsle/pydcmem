@@ -24,19 +24,22 @@ SALESFORCE_ORGANIZATION_ID
 from __future__ import annotations
 
 import os
+import pdb
 from datetime import datetime
 from dataclasses import dataclass, field
-from typing import Iterable, List, Dict, Any, Optional, Tuple
+from typing import Iterable, List, Dict, Any, Optional, Tuple, Literal
 
 import httpx
 from uuid6 import uuid7
 from dotenv import load_dotenv
+from openai import OpenAI
 
 from .memory_extractor import MemoryCandidate
-from util.ingestion_client import DataCloudIngestionClient
-from util.query_svc import QueryServiceClient
-from util.memory_results_parser import parse_tabular_payload
+from pydc_mem.util.ingestion_client import DataCloudIngestionClient
+from pydc_mem.util.query_svc import QueryServiceClient
+from pydc_mem.util.memory_results_parser import parse_tabular_payload
 
+DEFAULT_MODEL = "gpt-4o"
 
 # --- Result/Report types -------------------------------------------------------
 @dataclass
@@ -93,13 +96,14 @@ class UserAttributeClient:
         self.vector_index_dlm = os.getenv("VECTOR_IDX_DLM")
         self.chunk_dlm = os.getenv("CHUNK_DLM")
         self.tenantId = os.getenv('SALESFORCE_ORGANIZATION_ID')
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.llm_client = OpenAI(api_key=self.api_key)
         self.query_svc_client = QueryServiceClient()
         self.ingestion_client = DataCloudIngestionClient()
 
     # -------------------- public API --------------------
     def fetch_relevant_attributes(self, user_id: str, utterance: str) -> List[Dict]:
         resp = self._search_relevant_memories(user_id=user_id, utterance=utterance)
-        print(resp.json())
         if resp is None:
             return []
         try:
@@ -109,6 +113,14 @@ class UserAttributeClient:
 
     def fetch_user_attributes(self, user_id: str) -> List[Dict]:
         resp = self._search_all_memories(user_id=user_id)
+        if resp is None:
+            return []
+        try:
+            return parse_tabular_payload(resp.json())["rows"]
+        except Exception:
+            return []
+    def fetch_relevant_attributes_with_src(self, user_id: str, utterance: str) -> List[Dict]:
+        resp = self._search_relevant_attributes_with_src(user_id=user_id, utterance=utterance)
         if resp is None:
             return []
         try:
@@ -134,8 +146,8 @@ class UserAttributeClient:
         """
         report = UpsertReport(user_id=user_id)
 
-        # Fetch current state
-        current_mems = self.fetch_user_attributes(user_id)
+        # # Fetch current state
+        # current_mems = self.fetch_user_attributes(user_id)
 
         # Optional dedupe: last candidate per attribute wins
         if dedupe_last_write_wins:
@@ -149,9 +161,11 @@ class UserAttributeClient:
 
         for c in work_list:
             attr_key = self._norm(c.attribute) if normalize_attributes else c.attribute
+            current_mems = self.fetch_relevant_attributes_with_src(user_id=user_id, utterance=attr_key)
             new_value = c.value.strip()
             old_value = None
             current = {}
+
             if len(current_mems) > 0:
                 results = self._filter_eq(current_mems, "attribute__c", attr_key)
                 current = results[0] if len(results) > 0 else {}
@@ -200,8 +214,8 @@ class UserAttributeClient:
                     )
         return report
 
-    @staticmethod
-    def _filter_eq(rows: Iterable[Dict[str, Any]], field: str, value: Any, *, case_sensitive: bool = False) -> List[
+
+    def _filter_eq(self, rows: Iterable[Dict[str, Any]], field: str, value: Any, *, case_sensitive: bool = False) -> List[
         Dict[str, Any]]:
         """
         Return rows where row[field] == value.
@@ -215,7 +229,7 @@ class UserAttributeClient:
         out = []
         for row in rows:
             v = row.get(field)
-            if norm(v) == target:
+            if self._llm_compare_strings(norm(v), target):
                 out.append(row)
         return out
 
@@ -234,14 +248,12 @@ class UserAttributeClient:
         }]
         request_object = {"data": data}
         response = self.ingestion_client.ingest_data(request_object, self.connector, self.dlo)
-        print(response)
         return self._status_err(response)
 
     def _update_attribute(self, update_obj) -> Tuple[Optional[int], Optional[str]]:
         data = [update_obj]
         request_object = {"data": data}
         response = self.ingestion_client.ingest_data(request_object, self.connector, self.dlo)
-        print(response.json())
         return self._status_err(response)
 
     def _search_all_memories(self, user_id: str, **kwargs) -> Optional[httpx.Response]:
@@ -252,7 +264,7 @@ class UserAttributeClient:
             SELECT
                 *
             FROM
-                "AIUserAttributes__dlm"
+                "{self.dlo}__dlm"
             WHERE
                 "userId__c" = '{user_id}'    
             """
@@ -283,6 +295,94 @@ class UserAttributeClient:
         }
         response = self.query_svc_client.read_data(request_obj)
         return response
+
+    def _search_relevant_attributes_with_src(self, user_id: str, utterance: str, limit=1, **kwargs):
+        """
+        fetches memories/attributes relevant to given utterance
+        """
+        sql = f"""
+         SELECT
+            source.*
+         FROM 
+            vector_search(TABLE({self.vector_index_dlm}), '{utterance}', '', {limit}) AS index 
+         JOIN 
+            {self.chunk_dlm} AS chunk
+         ON 
+            index.RecordId__c = chunk.RecordId__c
+         JOIN
+            {self.dlo}__dlm AS source
+         ON 
+            chunk.SourceRecordId__c = source.Id__c   
+        """
+        request_obj = {
+            "sql": sql
+        }
+        response = self.query_svc_client.read_data(request_obj)
+        return response
+
+    def _llm_compare_strings(
+            self,
+            src: str,
+            dest: str,
+            model: str = DEFAULT_MODEL,
+            temperature: float = 0.0,
+            comparison_type: Literal["exact", "semantic", "fuzzy"] = "semantic",
+            fallback_to_simple: bool = True
+    ) -> bool:
+        """
+        Use an LLM to compare two strings for equality and return a boolean result.
+
+        Args:
+            src: First string to compare
+            dest: Second string to compare
+            model: OpenAI model to use
+            temperature: Temperature for the LLM (0.0 for deterministic results)
+            comparison_type: Type of comparison to perform
+                - "exact": Exact string match (case-insensitive)
+                - "semantic": Semantic similarity (same meaning)
+                - "fuzzy": Fuzzy matching (handles typos, abbreviations)
+            fallback_to_simple: Whether to fallback to simple comparison on error
+
+        Returns:
+            bool: True if strings are equal, False otherwise
+        """
+        if not src or not dest:
+            return src == dest
+
+        # Define comparison instructions based on type
+        comparison_instructions = {
+            "exact": "Compare for exact equality (ignoring case and whitespace).",
+            "semantic": "Compare for semantic equality (same meaning, even if worded differently).",
+            "fuzzy": "Compare for fuzzy equality (handle typos, abbreviations, and variations)."
+        }
+
+        prompt = f"""Compare these two strings for meaning only (real-world or user-facing meaning). Ignore code, syntax, or naming differences: String 1: "{src}" String 2: "{dest}". {comparison_instructions[comparison_type]}. Respond with ONLY "TRUE" or "FALSE" - no other text, no explanation, no punctuation."""
+
+        try:
+            response = self.llm_client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system",
+                     "content": "You are a precise string comparison tool. Always respond with only TRUE or FALSE."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=temperature,
+                max_tokens=10
+            )
+
+            result = response.choices[0].message.content.strip().upper()
+            # Validate response
+            if result not in ["TRUE", "FALSE"]:
+                if fallback_to_simple:
+                    return src.strip().lower() == dest.strip().lower()
+                raise ValueError(f"Invalid LLM response: {result}")
+
+            return result == "TRUE"
+        except Exception as e:
+            if fallback_to_simple:
+                print(f"LLM comparison failed: {e}. Falling back to simple comparison.")
+                return src.strip().lower() == dest.strip().lower()
+            raise e
 
     @staticmethod
     def _status_err(resp: Optional[httpx.Response]) -> Tuple[Optional[int], Optional[str]]:

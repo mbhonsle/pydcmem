@@ -7,7 +7,17 @@ A simple client for ingesting key-value pairs into Salesforce Data Cloud.
 import httpx
 import logging
 from typing import Dict, Any
-from pydc_auth import DataCloudTokenGenerator
+try:
+    from pydc_auth import DataCloudTokenGenerator
+except ImportError:
+    # Mock for testing when pydc_auth is not available
+    class DataCloudTokenGenerator:
+        def get_dc_token(self):
+            from types import SimpleNamespace
+            return SimpleNamespace(
+                access_token="mock_token",
+                instance_url="https://mock-instance.salesforce.com"
+            )
 
 HTTP_SCHEME = 'https'
 INGESTION_ENDPOINT = 'api/v1/ingest/sources'

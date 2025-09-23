@@ -1,4 +1,3 @@
-# memory_pipeline_adapter.py
 # Python 3.12
 #
 # Purpose:
@@ -6,40 +5,14 @@
 #     1) calls the LLM via MemoryExtractor to get memory candidates
 #     2) upserts them into the user_attributes table via UserAttributeClient
 #
-# Usage (script):
-#   export OPENAI_API_KEY=sk-...
-#   python memory_pipeline_adapter.py --api-base https://api.example.com \
-#     --user-id alex-id-123 \
-#     --utterance "I usually fly Delta and prefer window seats."
-#
-# Usage (embedded):
-#   from memory_extractor import MemoryExtractor
-#   from user_attribute_client import UserAttributeClient
-#   from memory_pipeline_adapter import AgentMemoryOrchestrator
-#
-#   extractor = MemoryExtractor()
-#   ua_client = UserAttributeClient(base_url="https://api.example.com", auth_token="bearer-xyz")
-#   orch = AgentMemoryOrchestrator(extractor, ua_client)
-#   candidates, report = orch.process(
-#       user_id="alex-id-123",
-#       utterance="I usually fly Delta and prefer window seats.",
-#       session_vars={"passengers": 2, "class": "economy"},
-#       recent_dialogue=[("Agent", "Do you want Delta again?"), ("User", "Yes, Delta")],
-#       past_memory_facts=["Home airport = SFO"],
-#   )
-#   print(report)
-#   for d in report.details:
-#       print(d.attribute, d.action, "->", d.new_value)
-
 from __future__ import annotations
 
 import argparse
 import json
 from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
-# These imports assume the previous files are available alongside this module.
-from core.memory_client import UserAttributeClient, UpsertReport
-from core.memory_extractor import MemoryExtractor, MemoryCandidate
+from pydc_mem.core.memory_client import UserAttributeClient, UpsertReport
+from pydc_mem.core.memory_extractor import MemoryExtractor, MemoryCandidate
 
 class AgentMemoryOrchestrator:
     """
@@ -85,8 +58,6 @@ class AgentMemoryOrchestrator:
     def get(self, user_id: str, utterance: str):
         self.ua_client.fetch_relevant_attributes(user_id=user_id, utterance=utterance)
 
-
-# ---------------- CLI for convenience/testing ----------------
 
 def _build_cli() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="End-to-end memory extraction → user_attributes upsert.")

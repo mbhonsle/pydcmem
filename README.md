@@ -2,14 +2,14 @@
 
 **Enterprise Agentic Memory implementation based on [Salesforce Data Cloud](https://www.salesforce.com/data/)**
 
-Majority of Salesforce Enterprise customers have already invested in an extensive Data Cloud implementation in the Salesforce eco-system (one or multiple orgs). How do we provide Agentic Memory Solution that simply plugs into these custom implementation without any specific modifications?   
+Majority of Salesforce Enterprise customers have already invested extensively in customized Data Cloud implementation in their own Salesforce eco-system (one or multiple orgs). How do we provide an Agentic Memory Solution for [Salesforce Agentforce](https://www.salesforce.com/agentforce/) that simply plugs into these custom DC implementation without any specific modifications?   
 
 PyDCMem is a Python library that provides intelligent memory management for Enterprise Agentic systems by extracting, storing, and retrieving user-specific attributes and preferences from conversations using Salesforce Data Cloud as the backend storage and data processing engine. 
 
-The setup requires only creating standard Search Index and Streaming Ingestion pipelines without any custom handling, and we have a fully compliant Agentic Memory solution with PyDCmem.
+The setup requires only creating standard Search Index and Streaming Ingestion pipelines without any custom handling, and we have a fully compliant Agentic Memory solution with PyDCMem.
 ## Features
 
-- **Intelligent Memory Extraction**: Uses OpenAI's LLM to extract memory-worthy facts from user utterances
+- **Intelligent Memory Extraction and Updates**: Uses OpenAI LLMs (WIP to extend to other LLMs) to extract memory-worthy facts from user utterances, conversations, previous memories, session variables. Further updates semantically similar memories in DC with newer facts.
 - **Data Cloud Integration**: Seamlessly stores and retrieves user attributes using Salesforce Data Cloud
 - **Vector Search**: Leverages vector search capabilities for relevant memory retrieval
 - **Flexible Context Support**: Handles session variables, dialogue history, and past memory facts
@@ -110,7 +110,7 @@ python -m pydc_mem.dcmem --user-id "user-123" --utterance "What are my preferenc
 ## Architecture
 ![PyDcMem.png](resources/PyDcMem.png)
 
-The architecture depends on two fundamental processes in Salesforce Data Cloud:
+The architecture leverages two fundamental Salesforce Data Cloud processes:
  - Streaming Ingestion
  - Search Index Pipeline
 
@@ -127,50 +127,6 @@ Here are some useful resources:
 
 NOTE: you can name the connector and the objects anything you want, but you will need to provide those values env. variables mentioned below.
 ### Search Index Pipeline Setup
-
-
-
-### PyDCMem Core Components
-
-#### 1. MemoryExtractor (`core/memory_extractor.py`)
-- **Purpose**: Extracts memory-worthy facts from user utterances using OpenAI's LLM
-- **Key Features**:
-  - Configurable system prompts for different extraction strategies
-  - Support for context variables (session vars, dialogue history, past memories)
-  - Pydantic validation for extracted memory candidates
-  - JSON parsing with fallback regex extraction
-
-#### 2. UserAttributeClient (`core/memory_client.py`)
-- **Purpose**: Manages user attributes in Salesforce Data Cloud
-- **Key Features**:
-  - CRUD operations for user attributes
-  - Vector search for relevant memory retrieval
-  - Upsert logic with conflict resolution
-  - Comprehensive reporting and error handling
-
-#### 3. AgentMemoryOrchestrator (`dcmem.py`)
-- **Purpose**: Orchestrates the end-to-end memory pipeline
-- **Key Features**:
-  - Coordinates extraction and storage
-  - Supports dry-run mode for testing
-  - CLI interface for easy integration
-
-### Utility Components
-
-#### 1. DataCloudIngestionClient (`util/ingestion_client.py`)
-- Handles data ingestion into Salesforce Data Cloud
-- Manages authentication and API communication
-- Supports context manager pattern
-
-#### 2. QueryServiceClient (`util/query_svc.py`)
-- Executes SQL queries against Data Cloud
-- Handles vector search operations
-- Manages query result processing
-
-#### 3. MemoryResultsParser (`util/memory_results_parser.py`)
-- Parses and normalizes query results
-- Handles type coercion for different data types
-- Provides clean, structured output format
 
 ## Configuration
 
@@ -205,84 +161,6 @@ AIUserAttributes:
     id: string
 ```
 
-## API Reference
-
-### MemoryExtractor
-
-```python
-class MemoryExtractor:
-    def extract(
-        self,
-        utterance: str,
-        *,
-        session_vars: Optional[Dict[str, Any]] = None,
-        recent_dialogue: Optional[Sequence[Tuple[str, str]]] = None,
-        past_memory_facts: Optional[Iterable[str]] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        max_tokens: Optional[int] = None,
-    ) -> List[MemoryCandidate]
-```
-
-### UserAttributeClient
-
-```python
-class UserAttributeClient:
-    def fetch_relevant_attributes(self, user_id: str, utterance: str) -> List[Dict]
-    def fetch_user_attributes(self, user_id: str) -> List[Dict]
-    def upsert_from_candidates(
-        self,
-        user_id: str,
-        candidates: List[MemoryCandidate],
-        *,
-        normalize_attributes: bool = True,
-        case_insensitive_compare: bool = True,
-        dedupe_last_write_wins: bool = True,
-    ) -> UpsertReport
-```
-
-### AgentMemoryOrchestrator
-
-```python
-class AgentMemoryOrchestrator:
-    def update(
-        self,
-        *,
-        user_id: str,
-        utterance: str,
-        session_vars: Optional[dict[str, Any]] = None,
-        recent_dialogue: Optional[Sequence[Tuple[str, str]]] = None,
-        past_memory_facts: Optional[Iterable[str]] = None,
-        dry_run: bool = False
-    ) -> tuple[List[MemoryCandidate], Optional[UpsertReport]]
-    
-    def get(self, user_id: str, utterance: str)
-```
-
-## Data Models
-
-### MemoryCandidate
-
-```python
-class MemoryCandidate(BaseModel):
-    entity: str      # User identifier
-    attribute: str   # Attribute name (e.g., "preferred_airline")
-    value: str       # Attribute value (e.g., "Delta Airlines")
-```
-
-### UpsertReport
-
-```python
-@dataclass
-class UpsertReport:
-    user_id: str
-    added: int = 0
-    updated: int = 0
-    skipped: int = 0
-    errors: int = 0
-    details: List[UpsertItemResult] = field(default_factory=list)
-```
-
 ## Advanced Usage
 
 ### Custom Memory Extraction
@@ -295,25 +173,6 @@ custom_extractor = MemoryExtractor(
     model="gpt-4o",
     temperature=0.1
 )
-```
-
-### Batch Processing
-
-```python
-# Process multiple utterances
-utterances = [
-    "I prefer morning flights",
-    "I always book window seats",
-    "I'm vegetarian, so no meat meals"
-]
-
-for utterance in utterances:
-    candidates, report = orchestrator.update(
-        user_id="user-123",
-        utterance=utterance,
-        dry_run=False
-    )
-    print(f"Processed: {len(candidates)} candidates")
 ```
 
 ### Error Handling
@@ -334,6 +193,85 @@ try:
 except Exception as e:
     print(f"Processing failed: {e}")
 ```
+
+## Testing
+
+### Running Tests
+
+The project includes comprehensive unit tests and integration tests.
+
+#### Quick Start
+
+```bash
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Run all unit tests
+pytest
+
+# Run with coverage
+pytest --cov=src/pydc_mem --cov-report=html
+
+# Run integration tests (requires API keys)
+pytest -m integration
+```
+
+#### Using the Test Runner
+
+```bash
+# Run unit tests only
+python run_tests.py
+
+# Run integration tests (requires API keys)
+python run_tests.py integration
+
+# Run all tests with coverage
+python run_tests.py all
+
+# Install dev dependencies and run tests
+python run_tests.py --install-dev
+```
+
+#### Using Make
+
+```bash
+# Install development dependencies
+make install-dev
+
+# Run unit tests
+make test-unit
+
+# Run integration tests
+make test-integration
+
+# Run tests with coverage
+make test-cov
+
+# Run linting
+make lint
+
+# Format code
+make format
+
+# Run CI checks
+make ci
+```
+
+### Test Structure
+
+```
+tests/
+├── __init__.py
+├── conftest.py                    # Test configuration and fixtures
+├── test_memory_extractor.py       # MemoryExtractor tests
+├── test_memory_client.py          # UserAttributeClient tests
+├── test_orchestrator.py           # AgentMemoryOrchestrator tests
+└── test_utilities.py              # Utility classes tests
+```
+
+### Test Categories
+
+- **Unit Tests**: Test individual components in isolation with mocked dependencies
 
 ## Development
 

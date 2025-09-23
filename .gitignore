@@ -4,3 +4,4 @@ src/*.egg-info
 .env
 .idea
 *__pycache__*
+.pytest_cache
