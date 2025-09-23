@@ -20,6 +20,7 @@ except ImportError:
 
 QUERY_SVC_ENDPOINT = 'services/data/v63.0/ssot/queryv2'
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 

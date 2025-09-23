@@ -24,6 +24,7 @@ SALESFORCE_ORGANIZATION_ID
 from __future__ import annotations
 
 import os
+import logging
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Iterable, List, Dict, Any, Optional, Tuple, Literal
@@ -37,6 +38,8 @@ from .memory_extractor import MemoryCandidate
 from pydc_mem.util.ingestion_client import DataCloudIngestionClient
 from pydc_mem.util.query_svc import QueryServiceClient
 from pydc_mem.util.memory_results_parser import parse_tabular_payload
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 DEFAULT_MODEL = "gpt-4o"
 
@@ -384,7 +387,7 @@ class UserAttributeClient:
             return result == "TRUE"
         except Exception as e:
             if fallback_to_simple:
-                print(f"LLM comparison failed: {e}. Falling back to simple comparison.")
+                logging.exception(f"LLM comparison failed: {e}. Falling back to simple comparison.")
                 return src.strip().lower() == dest.strip().lower()
             raise e
 

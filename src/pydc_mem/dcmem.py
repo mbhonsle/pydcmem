@@ -7,12 +7,15 @@
 #
 from __future__ import annotations
 
+import logging
 import argparse
 import json
 from typing import Any, Iterable, List, Optional, Sequence, Tuple, Dict
 
 from pydc_mem.core.memory_client import UserAttributeClient, UpsertReport
 from pydc_mem.core.memory_extractor import MemoryExtractor, MemoryCandidate
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 class AgentMemoryOrchestrator:
     """
@@ -85,21 +88,20 @@ def _main() -> None:
         handle_get(args, orch)
 
 def handle_get(args, orch):
-    print(json.dumps(orch.get(user_id=args.user_id, utterance=args.utterance,limit=args.limit), ensure_ascii=False, indent=2))
+    logging.info(json.dumps(orch.get(user_id=args.user_id, utterance=args.utterance,limit=args.limit), ensure_ascii=False, indent=2))
 
 def handle_update(args, orch):
     candidates, report = orch.update(user_id=args.user_id, utterance=args.utterance, session_vars=None,
                                      recent_dialogue=None, past_memory_facts=None, dry_run=args.dry_run)
     # 3) Print results
     if args.json:
-        print(json.dumps([c.model_dump() for c in candidates], ensure_ascii=False, indent=2))
+        logging.info(json.dumps([c.model_dump() for c in candidates], ensure_ascii=False, indent=2))
     else:
         for c in candidates:
-            print(f"- {c.entity}: {c.attribute} = {c.value}")
+            logging.info(f"- {c.entity}: {c.attribute} = {c.value}")
     if report:
-        print("\n", report)
         for d in report.details:
-            print(f"  {d.attribute}: {d.action} ({d.old_value!r} -> {d.new_value!r})"
+            logging.info(f"  {d.attribute}: {d.action} ({d.old_value!r} -> {d.new_value!r})"
                   f"{'' if d.error is None else ' ERROR=' + d.error}")
 
 

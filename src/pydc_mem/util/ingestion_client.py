@@ -22,8 +22,8 @@ except ImportError:
 HTTP_SCHEME = 'https'
 INGESTION_ENDPOINT = 'api/v1/ingest/sources'
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
-
 
 class DataCloudIngestionClient:
     """Client for Salesforce Data Cloud Ingestion API"""
