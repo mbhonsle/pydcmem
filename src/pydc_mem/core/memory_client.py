@@ -24,7 +24,6 @@ SALESFORCE_ORGANIZATION_ID
 from __future__ import annotations
 
 import os
-import pdb
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Iterable, List, Dict, Any, Optional, Tuple, Literal
@@ -282,13 +281,18 @@ class UserAttributeClient:
          SELECT
             index.RecordId__c,
             index.score__c,
-            chunk.Chunk__c 
+            chunk.Chunk__c,
+            source.value__c
          FROM 
             vector_search(TABLE({self.vector_index_dlm}), '{utterance}', '', {limit}) AS index 
          JOIN 
             {self.chunk_dlm} AS chunk
          ON 
             index.RecordId__c = chunk.RecordId__c
+         JOIN
+            {self.dlo}__dlm AS source
+         ON 
+            chunk.SourceRecordId__c = source.Id__c   
         """
         request_obj = {
             "sql": sql

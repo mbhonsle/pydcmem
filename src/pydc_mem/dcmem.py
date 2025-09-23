@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from typing import Any, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Iterable, List, Optional, Sequence, Tuple, Dict
 
 from pydc_mem.core.memory_client import UserAttributeClient, UpsertReport
 from pydc_mem.core.memory_extractor import MemoryExtractor, MemoryCandidate
@@ -55,8 +55,8 @@ class AgentMemoryOrchestrator:
         )
         return candidates, report
 
-    def get(self, user_id: str, utterance: str):
-        self.ua_client.fetch_relevant_attributes(user_id=user_id, utterance=utterance)
+    def get(self, user_id: str, utterance: str) -> List[Dict]:
+        return self.ua_client.fetch_relevant_attributes(user_id=user_id, utterance=utterance)
 
 
 def _build_cli() -> argparse.ArgumentParser:
@@ -84,7 +84,7 @@ def _main() -> None:
         handle_get(args, orch)
 
 def handle_get(args, orch):
-    orch.get(user_id=args.user_id, utterance=args.utterance)
+    print(json.dumps(orch.get(user_id=args.user_id, utterance=args.utterance), ensure_ascii=False, indent=2))
 
 def handle_update(args, orch):
     candidates, report = orch.update(user_id=args.user_id, utterance=args.utterance, session_vars=None,
