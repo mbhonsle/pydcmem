@@ -14,9 +14,9 @@ Imagine your AI agents having the memory of an elephant—remembering every pref
 
 PyDCMem is a sophisticated Python library that transforms raw conversations into intelligent, persistent memory using the power of Salesforce Data Cloud. It's designed for:
 
-- **Salesforce Enterprise Customers & Partners** who want to enhance their AI agents
-- **Software Architects** building next-generation conversational systems  
-- **Salesforce Admins** seeking seamless integration with existing infrastructure
+- **Salesforce Enterprise Customers & Partners**
+- **Software Architects**  
+- **Salesforce Admins**
 
 ### The Magic ✨
 
@@ -288,9 +288,6 @@ tests/
 ### Test Categories
 
 - **🧪 Unit Tests**: Test individual components in isolation with mocked dependencies
-- **🔗 Integration Tests**: Validate real Data Cloud connectivity and end-to-end workflows
-- **📊 Performance Tests**: Ensure memory operations scale efficiently
-- **🛡️ Security Tests**: Validate authentication and data protection mechanisms
 
 ## Development 👨‍💻
 
@@ -310,22 +307,6 @@ src/
 │       └── memory_results_parser.py # Result parsing
 └── AIUserAttributesSchema.yml      # Data schema definition
 ```
-
-### Technology Stack
-
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **HTTP Client** | `httpx` | High-performance async HTTP requests |
-| **AI/LLM** | `openai` | GPT-4 powered memory extraction |
-| **Data Validation** | `pydantic` | Type-safe data models and validation |
-| **Authentication** | `pydc-auth` | Salesforce OAuth and JWT handling |
-| **Configuration** | `python-dotenv` | Environment variable management |
-| **Resilience** | `tenacity` | Intelligent retry mechanisms |
-| **Security** | `cryptography` | Encryption and security utilities |
-| **Tokens** | `PyJWT` | JWT token parsing and validation |
-| **IDs** | `uuid6` | Time-ordered unique identifiers |
-
-> 🏗️ **Architecture Note**: Clean separation of concerns with dedicated modules for extraction, storage, and orchestration.
 
 ## Contributing 🤝
 

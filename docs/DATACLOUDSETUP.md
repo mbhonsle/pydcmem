@@ -23,18 +23,15 @@ Let's set up both pathways to unlock the full potential of your AI agents.
 
 ## 📥 Write Path: Streaming Ingestion Setup
 
-### The Power of Real-Time Memory Updates
+### The Power of Streaming Memory Updates
 
-PyDCMem harnesses the [Data Cloud Ingestion API](https://developer.salesforce.com/docs/data/data-cloud-int/references/data-cloud-ingestionapi-ref/c360-a-api-get-started.html) to stream memory updates directly into your data lake. This creates a seamless flow where conversations become intelligent memories in real-time.
+PyDCMem harnesses the [Data Cloud Ingestion API](https://developer.salesforce.com/docs/data/data-cloud-int/references/data-cloud-ingestionapi-ref/c360-a-api-get-started.html) to stream memory updates directly into your data lake. This creates a seamless flow where conversations become intelligent memories.
 
 ### Step 1: Create the Ingestion Connector
 
 1. **Use the PyDCMem Schema**: When setting up your Ingestion API connector, use the [AIUserAttributesSchema.yml](../src/AIUserAttributesSchema.yml) file. This creates a connector specifically optimized for memory attributes.
 
-2. **Configure Data Objects**: Once your connector is ready, navigate to the Data Cloud App and create the corresponding:
-   - **DataStream**: The streaming pipeline for memory data
-   - **DataLake**: The storage layer for your memory objects  
-   - **DataModel**: The structured representation of memory attributes
+2. **Configure Data Objects**: Once your connector is ready, navigate to the Data Cloud App and create the corresponding Datastream, DataLake and Data Model objects.
 
 ### Step 2: Authentication Setup
 
@@ -62,7 +59,7 @@ Before diving into the Ingestion API, you'll need a **Connected App** configured
 
 PyDCMem leverages Data Cloud's powerful [SQL Query API](https://developer.salesforce.com/docs/data/data-cloud-query-guide/guide/dc-sql-query-apis.html) to perform intelligent memory retrieval. This enables your AI agents to find relevant context in milliseconds, not minutes.
 
-### The Three Pillars of Memory Retrieval
+### The three main objects for Memory Storage & Retrieval
 
 PyDCMem queries three specialized Data Cloud objects to deliver intelligent memory experiences:
 
@@ -80,7 +77,6 @@ Since PyDCMem's primary goal is **relevance-based memory retrieval**, we need a 
 
 - **🎯 Semantic Search**: Find memories based on meaning, not just keywords
 - **⚡ Vector Similarity**: Leverage AI-powered similarity matching
-- **🔄 Real-Time Updates**: Search index updates automatically as new memories are added
 - **📊 Confidence Scoring**: Rank results by AI confidence levels
 
 ### 🎥 Complete Setup Walkthrough
@@ -98,29 +94,6 @@ Once both pathways are configured, PyDCMem creates a seamless memory ecosystem:
 
 This architecture ensures your AI agents always have the right context at the right time, creating truly intelligent conversational experiences.
 
-## 🎯 Next Steps: Configuration & Testing
-
-### Environment Variables Setup
-
-Once your Data Cloud infrastructure is ready, configure PyDCMem with these environment variables:
-
-```bash
-# Data Cloud Configuration
-export MEMORY_DLO="AIUserAttributes__dlm"                    # Your main memory table
-export MEMORY_CONNECTOR="MemoryConnector"                    # Your ingestion connector
-export VECTOR_IDX_DLM="AIUserAttributes_index__dlm"         # Your vector index
-export CHUNK_DLM="AIUserAttributes_chunk__dlm"              # Your chunk table
-export SALESFORCE_ORGANIZATION_ID="00D000000000000EAA"      # Your org ID
-
-# AI Configuration
-export OPENAI_API_KEY="sk-proj-..."                         # Your OpenAI API key
-```
-
-### Testing Your Setup
-
-1. **🧪 Run Integration Tests**: Use PyDCMem's built-in test suite to validate your configuration
-2. **🔍 Test Memory Extraction**: Try the CLI interface with sample conversations
-3. **📊 Monitor Data Flow**: Check your Data Cloud instance to see memories being created and indexed
 
 ### Troubleshooting Common Issues
 
@@ -150,8 +123,6 @@ Congratulations! You've successfully transformed your Salesforce Data Cloud into
 ---
 
 <div align="center">
-
-**Your AI agents are about to get a lot smarter** 🧠✨
 
 *Built with the power of Salesforce Data Cloud*
 
