@@ -13,12 +13,15 @@ from __future__ import annotations
 import json
 import os
 import re
+import logging
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from openai import OpenAI
 from pydantic import BaseModel, validator
 from dotenv import load_dotenv
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 class MemoryCandidate(BaseModel):
     """
@@ -210,18 +213,19 @@ If there are no memory-worthy facts, return [].
         temperature: float,
         max_tokens: int,
     ) -> str:
+        instructions = self.system_instructions
+        prompt = self._render_user_prompt(utterance=utterance, session_vars=session_vars,
+                                          recent_dialogue=recent_dialogue, past_memory_facts=past_memory_facts, )
+
         messages = [
-            {"role": "system", "content": self.system_instructions},
+            {"role": "system", "content": instructions},
             {
                 "role": "user",
-                "content": self._render_user_prompt(
-                    utterance=utterance,
-                    session_vars=session_vars,
-                    recent_dialogue=recent_dialogue,
-                    past_memory_facts=past_memory_facts,
-                ),
+                "content": prompt,
             },
         ]
+
+        logging.info(f"LLM Request: {messages}")
 
         resp = self.client.chat.completions.create(
             model=model,

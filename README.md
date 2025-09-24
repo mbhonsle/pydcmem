@@ -2,6 +2,8 @@
 
 **Enterprise Agentic Memory implementation based on [Salesforce Data Cloud](https://www.salesforce.com/data/)**
 
+Possible Audience: Salesforce Enterprise Customers & Partners, Software Architects, Salesforce Admins. 
+
 Majority of Salesforce Enterprise customers have already invested extensively in customized Data Cloud implementation in their own Salesforce eco-system (one or multiple orgs). How do we provide an Agentic Memory Solution for [Salesforce Agentforce](https://www.salesforce.com/agentforce/) that simply plugs into these custom DC implementation without any specific modifications?   
 
 PyDCMem is a Python library that provides intelligent memory management for Enterprise Agentic systems by extracting, storing, and retrieving user-specific attributes and preferences from conversations using Salesforce Data Cloud as the backend storage and data processing engine. 
@@ -114,19 +116,8 @@ The architecture leverages two fundamental Salesforce Data Cloud processes:
  - Streaming Ingestion
  - Search Index Pipeline
 
-### Streaming Ingestion Setup
-We need to ingest the memories curated by PyDCMem for a given Agentic chat turn, and for this ingestion, we Data Cloud's standard [Streaming Ingestion API](https://developer.salesforce.com/docs/data/data-cloud-int/references/data-cloud-ingestionapi-ref/c360-a-api-get-started.html).
-
-The setup process is standard, but when you set-up Ingestion API connector use the [AIUserAttributesSchema.yml](src/AIUserAttributesSchema.yml) file. This will create the Ingestion connector specifically for this object.
-
-Once you have the connector setup head over to the Data Cloud App, and create the corresponding DataStream, DataLake and DataModel objects for the stream you created above.
-
-Here are some useful resources:
-- video [demonstration](https://www.youtube.com/watch?v=3xWSVGcTORI) of how to set-up Salesforce Data Cloud Ingestion API
-- Help [Guide](https://developer.salesforce.com/docs/data/data-cloud-int/guide/c360-a-create-ingestion-data-stream.html)
-
-NOTE: you can name the connector and the objects anything you want, but you will need to provide those values env. variables mentioned below.
-### Search Index Pipeline Setup
+The following documentation walks you through the required Data Cloud in detail:
+![DATA CLOUD SETUP for PyDCMem](docs/DATACLOUDSETUP.md)
 
 ## Configuration
 
